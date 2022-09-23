@@ -38,8 +38,8 @@ export class AuthService {
         login(req: authDto): any{
         const userToken = {
             login: req.login, 
-            accessToken: this.jwtService.sign({name: req.login}, {secret: jwtConstants.secret, expiresIn: 100}),
-            refreshToken: this.jwtService.sign({name: req.login}, {secret: jwtConstants.refreshSecret, expiresIn: 1000}),
+            accessToken: this.jwtService.sign({name: req.login}, {secret: jwtConstants.secret, expiresIn: 1000}),
+            refreshToken: this.jwtService.sign({name: req.login}, {secret: jwtConstants.refreshSecret, expiresIn: 10000}),
         }
         this.cacheManager.set(`${req.login} refreshToken`, userToken.refreshToken, {ttl: 1000} )
         return userToken

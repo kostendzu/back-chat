@@ -1,45 +1,56 @@
-import { SubscribeMessage,
-   WebSocketGateway, 
-   OnGatewayConnection, 
-   WebSocketServer, OnGatewayInit, OnGatewayDisconnect } from '@nestjs/websockets';
+import { Body, UseGuards , Req, Request} from '@nestjs/common';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  OnGatewayConnection,
+  WebSocketServer, OnGatewayInit, OnGatewayDisconnect
+} from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
+import { JwtGuard } from './auth/auth.jwtGuard';
+import { JwtStrategy } from './auth/jwt.strategy';
 import { ChatService } from './chat/chat.service';
+import jwt_decode from 'jwt-decode';
 
-@WebSocketGateway({
-cors: {origin: '*', methods: ["GET", "POST"], allowedHeaders: '*',credentials: true}, 
-transports: ['websocket'],
-upgrade: false
-})
-export class AppGateway implements OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect {
-  constructor(private chatSevice: ChatService){}
+@WebSocketGateway( {cors: true,  namespace: 'chat' })
+
+export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect  {
+  constructor(private chatSevice: ChatService){ 
+ }
   @WebSocketServer() server: Server;
 
   afterInit(server: Server) {
     console.log("Welcome");
-  //  console.log(server)
+    //  console.log(server)
   }
 
   handleDisconnect(client: Socket) {
-    console.log(client.id);
-    console.log('disconnected')
+    let data:{name: string} = jwt_decode(client.handshake.auth.token)
+    this.chatSevice.online(data.name)
+    console.log('disconnected', client.id);
   }
 
-handleConnection(client: Socket) {
-  //console.log(client.id);
-  // this.chatSevice.online(client.login);
-  // console.log('connected')
-  client.emit("message", "WWorld")
-  this.server.on("connection", (socket) => {
-   console.log("docket", socket.id)
-   client.emit(JSON.stringify({"message": "world"}));
-  })
-}
+  
+   handleConnection(client)
+    {
+      let data:{name: string} = jwt_decode(client.handshake.auth.token)
+   this.chatSevice.online(data.name)
+    console.log("On")
+    console.log("Connect: ",client.id);
+    client.emit('hui', 'RRR')
+  }
+
+  @SubscribeMessage('mese')
+  handleSendMessage(client: Socket, payload: any): any {
+    // await this.appService.createMessage(payload);
+    console.log("XXXX", payload);
+    this.server.emit('message', payload);
+  }
+
   
 
-@SubscribeMessage('message')
-async handleSendMessage(client: Socket, payload: any): Promise<any> {
- // await this.appService.createMessage(payload);
-   console.log(payload)
-  this.server.emit('message', payload);
+ 
+
+  
 }
-}
+
